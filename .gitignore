@@ -11,6 +11,9 @@ cmake-build-release/
 *.jpg
 *.png
 
+# sound
+*.wav
+
 # Prerequisites
 *.d
 
