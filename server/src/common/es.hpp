@@ -7,7 +7,7 @@
 #include <iostream>
 #include <string>
 #include <memory>
-#include "common/logger.hpp"
+#include "logger.hpp"
 
 namespace blus {
     bool Serialize(const Json::Value& value, std::string& str) {

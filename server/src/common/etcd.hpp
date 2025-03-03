@@ -3,7 +3,7 @@
 #include <etcd/Response.hpp>
 #include <etcd/KeepAlive.hpp>
 #include <etcd/Watcher.hpp>
-#include "common/logger.hpp"
+#include "logger.hpp"
 
 namespace blus {
     class Registry {

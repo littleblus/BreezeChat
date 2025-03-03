@@ -4,7 +4,7 @@
 #include <amqpcpp/libev.h>
 #include <openssl/ssl.h>
 #include <openssl/opensslv.h>
-#include "common/logger.hpp"
+#include "logger.hpp"
 
 namespace blus {
     class RabbitMQ {
