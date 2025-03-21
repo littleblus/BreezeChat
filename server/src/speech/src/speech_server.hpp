@@ -100,8 +100,8 @@ namespace blus {
                 LOG_ERROR("asr服务未设置");
                 return false;
             }
-            _service = std::make_shared<SpeechServiceImpl>(_asr);
-            int ret = _server->AddService(_service.get(), brpc::SERVER_DOESNT_OWN_SERVICE);
+            auto service = new SpeechServiceImpl(_asr);
+            int ret = _server->AddService(service, brpc::SERVER_OWNS_SERVICE);
             if (ret != 0) {
                 LOG_ERROR("SpeechServer添加服务失败");
                 return false;
@@ -138,6 +138,5 @@ namespace blus {
         Asr::Ptr _asr;
         Registry::Ptr _reg;
         std::shared_ptr<brpc::Server> _server;
-        std::shared_ptr<SpeechServiceImpl> _service;
     };
 }
