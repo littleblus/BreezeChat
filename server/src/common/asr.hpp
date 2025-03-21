@@ -7,6 +7,7 @@
 namespace blus {
     class Asr {
     public:
+        using Ptr = std::shared_ptr<Asr>;
         Asr(const std::string& ip, int32_t port, const std::string& service_name)
             : client_("http://" + ip + ":" + std::to_string(port)), service_name_(service_name) {
         }
@@ -40,6 +41,7 @@ namespace blus {
                     return json["text"].asString();
                 }
                 else if (res->status == 400) {
+                    LOG_ERROR("语音文件路径{}", audio_path);
                     throw std::runtime_error("语音文件不存在");
                 }
                 else if (res->status == 500) {

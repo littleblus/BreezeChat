@@ -3,9 +3,6 @@ from pydantic import BaseModel
 from paddlespeech.cli.asr.infer import ASRExecutor
 import os
 
-# 禁用所有日志
-
-
 
 # 初始化 ASR 执行器
 app = FastAPI()

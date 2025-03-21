@@ -14,7 +14,7 @@ message SpeechRecognitionRsp {
     string request_id = 1;                  // 请求ID
     bool success = 2;                       // 请求处理结果标志
     optional string errmsg = 3;             // 失败原因
-    optional string recognition_result = 4; //识别后的文字数据
+    optional string recognition_result = 4; // 识别后的文字数据
 }
 
 // 语音识别Rpc服务及接口的定义

@@ -8,6 +8,7 @@
 namespace blus {
     class Registry {
     public:
+        using Ptr = std::shared_ptr<Registry>;
         Registry(const std::string& service_name, const std::string& service_address, int ttl = 10)
             : _service_name(service_name)
             , _service_address(service_address)
