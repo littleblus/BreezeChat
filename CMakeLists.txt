@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # 包含子项目
 add_subdirectory(server/src/speech)
+add_subdirectory(server/src/file)
 
 # 添加可执行文件
 add_executable(test test.cpp)
