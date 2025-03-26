@@ -21,11 +21,11 @@ namespace blus {
             brpc::ClosureGuard rpc_guard(done);
             std::string data = request->speech_content();
             // 保存请求中的音频数据到文件
-            std::string tmpDir = std::filesystem::absolute("tmp").string();
+            std::filesystem::path tmpDir = std::filesystem::absolute("tmp");
             if (!std::filesystem::exists(tmpDir)) {
                 std::filesystem::create_directories(tmpDir);
             }
-            std::string audio_path = tmpDir + "/" + std::to_string(time(nullptr)) + ".wav";
+            std::filesystem::path audio_path = tmpDir / (std::to_string(time(nullptr)) + ".wav");
             std::ofstream ofs(audio_path, std::ios::binary);
             ofs.write(data.data(), data.size());
             ofs.close();

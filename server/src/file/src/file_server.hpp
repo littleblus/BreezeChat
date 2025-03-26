@@ -1,6 +1,7 @@
 #pragma once
 #include <brpc/server.h>
 #include <butil/logging.h>
+#include <filesystem>
 
 #include "base.pb.h"
 #include "file.pb.h"
@@ -11,7 +12,7 @@
 namespace blus {
     class FileServiceImpl : public FileService {
     public:
-        FileServiceImpl() {}
+        FileServiceImpl(const std::filesystem::path& save_path) : _save_path(save_path) {}
         ~FileServiceImpl() {}
 
         void GetSingleFile(google::protobuf::RpcController* controller,
@@ -22,7 +23,7 @@ namespace blus {
             response->set_request_id(request->request_id());
             std::string fid = request->file_id();
             std::string body;
-            if (readFile(fid, body)) {
+            if (readFile(_save_path / fid, body)) {
                 response->set_success(true);
                 response->mutable_file_data()->set_file_id(fid);
                 response->mutable_file_data()->set_file_content(body);
@@ -42,7 +43,7 @@ namespace blus {
             for (int i = 0; i < request->file_id_list_size(); i++) {
                 std::string fid = request->file_id_list(i);
                 std::string body;
-                if (readFile(fid, body)) {
+                if (readFile(_save_path / fid, body)) {
                     FileDownloadData data;
                     data.set_file_id(fid);
                     data.set_file_content(body);
@@ -65,7 +66,7 @@ namespace blus {
             brpc::ClosureGuard rpc_guard(done);
             response->set_request_id(request->request_id());
             std::string fid = uuid();
-            if (writeFile(fid, request->file_data().file_content())) {
+            if (writeFile(_save_path / fid, request->file_data().file_content())) {
                 response->set_success(true);
                 response->mutable_file_info()->set_file_id(fid);
                 response->mutable_file_info()->set_file_name(request->file_data().file_name());
@@ -86,7 +87,7 @@ namespace blus {
             std::string fid = uuid();
             for (int i = 0; i < request->file_data_size(); i++) {
                 std::string fid = uuid();
-                if (writeFile(fid, request->file_data(i).file_content())) {
+                if (writeFile(_save_path / fid, request->file_data(i).file_content())) {
                     auto file_info = response->add_file_info();
                     file_info->set_file_id(fid);
                     file_info->set_file_name(request->file_data(i).file_name());
@@ -101,6 +102,8 @@ namespace blus {
             }
             response->set_success(true);
         }
+    private:
+        std::filesystem::path _save_path;
     };
 
     class FileServer {
@@ -121,6 +124,8 @@ namespace blus {
 
     class FileServerBuilder {
     public:
+        FileServerBuilder(const std::filesystem::path& save_path) : _save_path(save_path) {}
+
         // 设置etcd服务
         bool make_etcd(const std::string& etcd_addr,
             const std::string& service_name,
@@ -137,7 +142,7 @@ namespace blus {
         bool make_rpc(int32_t listen_port, uint8_t thread_num, int rpc_timeout) {
             _server = make_shared<brpc::Server>();
 
-            auto service = new FileServiceImpl();
+            auto service = new FileServiceImpl(_save_path);
             int ret = _server->AddService(service, brpc::SERVER_OWNS_SERVICE);
             if (ret != 0) {
                 LOG_ERROR("FileServer添加服务失败");
@@ -170,5 +175,6 @@ namespace blus {
     private:
         Registry::Ptr _reg;
         std::shared_ptr<brpc::Server> _server;
+        std::filesystem::path _save_path;
     };
 }

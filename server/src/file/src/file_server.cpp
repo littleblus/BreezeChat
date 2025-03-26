@@ -5,6 +5,8 @@
 DEFINE_string(log_file, "", "日志文件路径, 默认输出到控制台");
 DEFINE_int32(log_level, 0, "日志等级, 0: trace, 1: debug, 2: info, 3: warn, 4: error, 5: critical");
 
+DEFINE_string(file_save_path, "", "文件保存路径");
+
 DEFINE_string(etcd_address, "", "etcd注册中心地址");
 DEFINE_string(file_service_name, "", "服务名称");
 DEFINE_string(instance_name, "", "实例名称");
@@ -23,7 +25,7 @@ int main(int argc, char* argv[]) {
     gflags::ReadFromFlagsFile("file.conf", "", true);
     blus::init_logger(FLAGS_log_file, static_cast<spdlog::level::level_enum>(FLAGS_log_level));
 
-    blus::FileServerBuilder builder;
+    blus::FileServerBuilder builder(FLAGS_file_save_path);
     builder.make_etcd(FLAGS_etcd_address, FLAGS_file_service_name, FLAGS_instance_name, FLAGS_service_ip, FLAGS_service_port, FLAGS_etcd_timeout);
     builder.make_rpc(FLAGS_listen_port, FLAGS_rpc_threads, FLAGS_rpc_timeout);
     auto server = builder.build();

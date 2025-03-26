@@ -5,6 +5,7 @@
 #include <sstream>
 #include <iomanip>
 #include <fstream>
+#include <filesystem>
 
 #include "logger.hpp"
 
@@ -26,10 +27,10 @@ namespace blus {
         return ss.str();
     }
 
-    bool readFile(const std::string& filepath, std::string& body) {
+    bool readFile(const std::filesystem::path& filepath, std::string& body) {
         std::ifstream ifs(filepath, std::ios::in | std::ios::binary);
         if (!ifs) {
-            LOG_ERROR("打开文件失败: {}", filepath);
+            LOG_ERROR("打开文件失败: {}", filepath.string());
             ifs.close();
             return false;
         }
@@ -40,7 +41,7 @@ namespace blus {
         body.resize(size);
         ifs.read(&body[0], size);
         if (!ifs.good()) {
-            LOG_ERROR("读取文件失败: {}", filepath);
+            LOG_ERROR("读取文件失败: {}", filepath.string());
             ifs.close();
             return false;
         }
@@ -48,17 +49,20 @@ namespace blus {
         return true;
     }
 
-    bool writeFile(const std::string& filepath, const std::string& body) {
+    bool writeFile(const std::filesystem::path& filepath, const std::string& body) {
+        if (!std::filesystem::exists(filepath.parent_path())) {
+            std::filesystem::create_directories(filepath.parent_path());
+        }
         std::ofstream ofs(filepath, std::ios::out | std::ios::binary | std::ios::trunc);
         if (!ofs) {
-            LOG_ERROR("打开文件失败: {}", filepath);
+            LOG_ERROR("打开文件失败: {}", filepath.string());
             ofs.close();
             return false;
         }
 
         ofs.write(body.data(), body.size());
         if (!ofs.good()) {
-            LOG_ERROR("写入文件失败: {}", filepath);
+            LOG_ERROR("写入文件失败: {}", filepath.string());
             ofs.close();
             return false;
         }

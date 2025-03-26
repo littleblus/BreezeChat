@@ -1,6 +1,7 @@
 #pragma once
 #include <json/json.h>
 #include <json/reader.h>
+#include <filesystem>
 #include "logger.hpp"
 #include "httplib.h"
 
@@ -12,7 +13,7 @@ namespace blus {
             : client_("http://" + ip + ":" + std::to_string(port)), service_name_(service_name) {
         }
 
-        std::string recognize(const std::string& audio_path) {
+        std::string recognize(const std::filesystem::path& audio_path) {
             // 发起一个POST请求
             // POST "http://ip:port/service_name"
             // Content-Type: application/json
@@ -21,7 +22,7 @@ namespace blus {
             // 200 OK 400 文件不存在 500 服务器错误
             // {"text": "识别结果"}
             httplib::Headers headers = { {"Content-Type", "application/json"} };
-            std::string body = "{\"path\": \"" + audio_path + "\"}";
+            std::string body = "{\"path\": \"" + audio_path.string() + "\"}";
 
             auto res = client_.Post("/" + service_name_, headers, body, "application/json");
 
@@ -41,7 +42,7 @@ namespace blus {
                     return json["text"].asString();
                 }
                 else if (res->status == 400) {
-                    LOG_ERROR("语音文件路径{}", audio_path);
+                    LOG_ERROR("语音文件路径{}", audio_path.string());
                     throw std::runtime_error("语音文件不存在");
                 }
                 else if (res->status == 500) {
