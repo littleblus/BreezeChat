@@ -11,6 +11,7 @@
 namespace blus {
     class EmailSender {
     public:
+        using Ptr = std::shared_ptr<EmailSender>;
         /// @brief 邮件发送（http://caspian.dotconf.net/menu/Software/SendEmail/）
         /// @param from 发送邮箱地址
         /// @param smtp smtp服务器地址
@@ -103,7 +104,7 @@ namespace blus {
         bool executeCommand(const std::string& cmd, std::string* output = nullptr) {
             std::string result;
             std::array<char, 128> buffer;
-            std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd.c_str(), "r"), pclose);
+            std::unique_ptr<::FILE, decltype(&pclose)> pipe(popen(cmd.c_str(), "r"), pclose);
             if (!pipe) {
                 if (output) {
                     *output = "popen failed!";
