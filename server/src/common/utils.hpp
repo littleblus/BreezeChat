@@ -4,12 +4,16 @@
 #include <atomic>
 #include <sstream>
 #include <iomanip>
+#include <openssl/sha.h>
 #include <fstream>
 #include <filesystem>
 
 #include "logger.hpp"
 
 namespace blus {
+    static const std::string SALT = "BreezeChat";
+
+    // 生成16位UUID
     std::string uuid() {
         std::random_device rd;
         std::mt19937 gen(rd());
@@ -25,6 +29,19 @@ namespace blus {
         ss << std::hex << std::setw(4) << std::setfill('0') << tmp;
 
         return ss.str();
+    }
+
+    std::string hashPassword(const std::string& password) {
+        std::string salted_password = password + SALT; // 加盐
+        unsigned char hash[SHA256_DIGEST_LENGTH]; // 256-bit = 32 字节
+        SHA256(reinterpret_cast<const unsigned char*>(salted_password.c_str()), salted_password.length(), hash);
+
+        std::ostringstream oss;
+        for (int i = 0; i < SHA256_DIGEST_LENGTH; ++i) { // 32 字节，每字节转 2 位十六进制
+            oss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
+        }
+
+        return oss.str(); // 64 个字符的十六进制字符串
     }
 
     bool readFile(const std::filesystem::path& filepath, std::string& body) {
