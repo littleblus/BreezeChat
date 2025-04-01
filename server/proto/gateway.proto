@@ -14,16 +14,16 @@ message ClientAuthenticationReq {
     SERVICE HTTP PATH:
     {
         获取随机验证码                  /service/user/get_random_verify_code
-        获取短信验证码                  /service/user/get_phone_verify_code
+        获取邮箱验证码                  /service/user/get_email_verify_code
         用户名密码注册                  /service/user/username_register
         用户名密码登录                  /service/user/username_login
-        手机号码注册                    /service/user/phone_register
-        手机号码登录                    /service/user/phone_login
+        邮箱注册                    /service/user/email_register
+        邮箱登录                    /service/user/email_login
         获取个人信息                    /service/user/get_user_info
         修改头像                        /service/user/set_avatar
         修改昵称                        /service/user/set_nickname
         修改签名                        /service/user/set_description
-        修改绑定手机                    /service/user/set_phone
+        修改绑定邮箱                    /service/user/set_email
 
         获取好友列表                    /service/friend/get_friend_list
         获取好友信息                    /service/friend/get_friend_info

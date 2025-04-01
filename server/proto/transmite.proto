@@ -11,6 +11,7 @@ message NewMessageReq {
     optional string session_id = 3; // 客户端身份识别信息 -- 这就是消息发送者
     string chat_session_id = 4;     // 聊天会话ID -- 标识了当前消息属于哪个会话，应该转发给谁
     MessageContent message = 5;     // 消息内容 -- 消息类型+内容
+}
     
 message NewMessageRsp {
     string request_id = 1;
