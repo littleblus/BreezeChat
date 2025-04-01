@@ -14,6 +14,7 @@ namespace blus {
 
     class ServiceChannel {
     public:
+        using Ptr = std::shared_ptr<ServiceChannel>;
         // 定义信道状态结构体
         struct ChannelStatus {
             ChannelPtr channel;
@@ -162,7 +163,7 @@ namespace blus {
 
     class ServiceManager {
     public:
-        using ptr = std::shared_ptr<ServiceChannel>;
+        using Ptr = std::shared_ptr<ServiceManager>;
 
         // 获取指定服务的节点
         ChannelPtr get(const std::string& service_name) {
@@ -228,7 +229,7 @@ namespace blus {
         }
 
         // 获取指定服务的信道管理对象
-        ptr getServiceChannel(const std::string& service_name) {
+        ServiceChannel::Ptr getServiceChannel(const std::string& service_name) {
             std::lock_guard<std::mutex> lock(_mutex);
             auto it = _services.find(service_name);
             if (it != _services.end()) {
@@ -249,6 +250,6 @@ namespace blus {
 
         std::mutex _mutex;
         std::unordered_set<std::string> _focus; // 关注的服务
-        std::unordered_map<std::string, ptr> _services;
+        std::unordered_map<std::string, ServiceChannel::Ptr> _services;
     };
 }

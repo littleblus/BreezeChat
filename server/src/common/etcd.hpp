@@ -42,6 +42,7 @@ namespace blus {
 
     class Discovery {
     public:
+        using Ptr = std::shared_ptr<Discovery>;
         using callback_t = std::function<void(const std::string&, const std::string&)>;
         Discovery(const std::string& service_name, const std::string& service_address,
             const callback_t& put_cb, const callback_t& delete_cb)
