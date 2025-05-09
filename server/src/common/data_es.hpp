@@ -49,6 +49,13 @@ namespace blus {
             }
             return ret;
         }
+        bool remove(const std::string& uid) {
+            auto ret = ESRemove(_client, "user").remove(uid);
+            if (!ret) {
+                LOG_ERROR("用户索引删除失败");
+            }
+            return ret;
+        }
         std::vector<User> search(const std::string& key, const std::vector<std::string>& exclude_uid_list = {}) {
             auto es = ESSearch(_client, "user")
                 .append_should_match("email.keyword", key)

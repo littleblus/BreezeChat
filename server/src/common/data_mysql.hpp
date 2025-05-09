@@ -67,6 +67,23 @@ namespace blus {
             auto user_ptr = std::make_shared<User>(user);
             return update(user_ptr);
         }
+        bool remove(const std::string& user_id) {
+            try {
+                odb::transaction trans(_db->begin());
+                auto user = select_by_uid(user_id);
+                if (user) {
+                    _db->erase(*user);
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+            catch (const std::exception& e) {
+                LOG_ERROR("删除用户失败{}: {}", user_id, e.what());
+                return false;
+            }
+        }
         std::shared_ptr<User> select_by_uid(const std::string& user_id) {
             std::shared_ptr<User> res;
             try {
