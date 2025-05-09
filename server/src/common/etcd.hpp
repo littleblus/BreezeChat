@@ -64,7 +64,9 @@ namespace blus {
             }
         }
 
-        ~Discovery() {}
+        ~Discovery() {
+            _watcher->Cancel();
+        }
     private:
         void watch_callback(etcd::Response response) {
             if (!response.is_ok()) {
