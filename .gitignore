@@ -5,6 +5,7 @@ build/
 log/
 cmake-build-debug/
 cmake-build-release/
+data/
 
 # 其他文件
 *.conf
