@@ -69,6 +69,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_executable(mysql_test test/mysql_test/test.cpp ${proto_srcs} ${odb_srcs})
     add_executable(redis_test test/redis_test/test.cpp ${proto_srcs})
     add_executable(es_test test/es_test/test.cpp ${proto_srcs})
+    add_executable(user_client test/user_client.cpp ${proto_srcs} ${odb_srcs})
 
     target_link_libraries(mysql_test
         PRIVATE
@@ -107,6 +108,30 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         jsoncpp
         protobuf
         pthread
+    )
+
+    target_link_libraries(user_client
+        PRIVATE
+        gflags
+        gtest
+        gmock
+        spdlog
+        fmt
+        hiredis
+        redis++
+        cpr
+        elasticlient
+        etcd-cpp-api
+        cpprest
+        jsoncpp
+        brpc
+        /usr/local/openssl-3.0.16/lib64/libssl.so.3
+        /usr/local/openssl-3.0.16/lib64/libcrypto.so.3
+        protobuf
+        leveldb
+        pthread
+        odb-mysql
+        odb
     )
 endif()
 
