@@ -29,7 +29,7 @@ namespace blus {
             contentType(contentType), charset(charset), tls(tls) {
         }
 
-        bool send(const std::string& to, const std::string& subject, const std::string& message, std::string* output = nullptr) {
+        virtual bool send(const std::string& to, const std::string& subject, const std::string& message, std::string* output = nullptr) {
             std::stringstream command;
             command << "sendEmail -f " << from
                 << " -t " << to
@@ -45,7 +45,7 @@ namespace blus {
             return executeCommand(command.str(), output);
         }
 
-        bool sendVerifyCode(const std::string& to, const std::string& code, std::string* output = nullptr) {
+        virtual bool sendVerifyCode(const std::string& to, const std::string& code, std::string* output = nullptr) {
             return send(to, "BreezeChat验证码", R"(
                 <!DOCTYPE html>
                 <html lang="zh">
