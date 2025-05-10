@@ -60,7 +60,7 @@ int main(int argc, char* argv[]) {
         server->start();
     }
     else {
-        LOG_ERROR("FileServer创建失败");
+        LOG_ERROR("UserServer创建失败");
     }
 
     return 0;

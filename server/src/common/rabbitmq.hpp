@@ -10,6 +10,7 @@ namespace blus {
     class RabbitMQ {
     public:
         using MessageCallback = std::function<void(const std::string&)>;
+        using Ptr = std::shared_ptr<RabbitMQ>;
         RabbitMQ(const std::string& user,
             const std::string& password,
             const std::string& host) {

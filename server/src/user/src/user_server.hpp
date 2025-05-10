@@ -378,7 +378,7 @@ namespace blus {
                     response->set_success(false);
                     return;
                 }
-                if (!user->avatar_id().empty()) user_info->set_avatar(file_response.file_data().file_content());
+                user_info->set_avatar(file_response.file_data().file_content());
             }
             response->set_success(true);
         }
