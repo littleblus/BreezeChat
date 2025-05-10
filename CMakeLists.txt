@@ -27,10 +27,54 @@ foreach(proto_file ${proto_files})
     list(APPEND proto_hdrs ${CMAKE_BINARY_DIR}/proto/${proto_hdr})
 endforeach()
 
+# 公共 ODB 输出目录
+set(ODB_OUT_DIR ${CMAKE_BINARY_DIR}/odb)
+file(MAKE_DIRECTORY ${ODB_OUT_DIR})
+
+# 所有要生成 .hxx 的文件
+set(ODB_INPUT_DIR ${CMAKE_SOURCE_DIR}/server/odb)
+set(ODB_FILES
+    chat_session_member.hxx
+    user.hxx
+)
+
+# 收集所有生成文件
+set(ALL_ODB_SRCS  )
+set(ALL_ODB_HDRS  )
+set(ALL_ODB_IXXS  )
+set(ALL_ODB_SQLS  )
+foreach(f ${ODB_FILES})
+  string(REGEX REPLACE "\.hxx$" "-odb.cxx"  _cxx ${f})
+  string(REGEX REPLACE "\.hxx$" "-odb.hxx"  _hdr ${f})
+  string(REGEX REPLACE "\.hxx$" "-odb.ixx"  _ixx ${f})
+  string(REGEX REPLACE "\.hxx$" ".sql"      _sql ${f})
+  add_custom_command(
+    OUTPUT ${ODB_OUT_DIR}/${_cxx}
+           ${ODB_OUT_DIR}/${_hdr}
+           ${ODB_OUT_DIR}/${_ixx}
+           ${ODB_OUT_DIR}/${_sql}
+    COMMAND odb -d mysql --std c++17
+            --generate-query --generate-schema
+            -o ${ODB_OUT_DIR}
+            ${ODB_INPUT_DIR}/${f}
+    DEPENDS ${ODB_INPUT_DIR}/${f}
+    COMMENT "Generating ODB files for ${f}"
+  )
+  list(APPEND ALL_ODB_SRCS ${ODB_OUT_DIR}/${_cxx})
+  list(APPEND ALL_ODB_HDRS ${ODB_OUT_DIR}/${_hdr})
+  list(APPEND ALL_ODB_HDRS ${ODB_OUT_DIR}/${_ixx})
+  list(APPEND ALL_ODB_SQLS ${ODB_OUT_DIR}/${_sql})
+endforeach()
+
+# 把生成的文件打包成一个静态库
+add_library(odb_gen STATIC ${ALL_ODB_SRCS})
+target_include_directories(odb_gen PUBLIC ${ODB_INPUT_DIR} ${ODB_OUT_DIR})
+
 # 包含子项目
 add_subdirectory(server/src/speech)
 add_subdirectory(server/src/file)
 add_subdirectory(server/src/user)
+add_subdirectory(server/src/transmit)
 
 # 添加可执行文件
 add_executable(test test.cpp)
