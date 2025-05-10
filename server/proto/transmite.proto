@@ -16,7 +16,7 @@ message NewMessageReq {
 message NewMessageRsp {
     string request_id = 1;
     bool success = 2;
-    string errmsg = 3; 
+    optional string errmsg = 3; 
 }
 
 // 这个用于内部的通信,生成完整的消息信息,并获取消息的转发人员列表

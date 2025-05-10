@@ -8,6 +8,8 @@
 
 #include "user.hxx"
 #include "user-odb.hxx"
+#include "chat_session_member.hxx"
+#include "chat_session_member-odb.hxx"
 #include "logger.hpp"
 
 namespace blus {
@@ -70,17 +72,27 @@ namespace blus {
         bool remove(const std::string& user_id) {
             try {
                 odb::transaction trans(_db->begin());
-                auto user = select_by_uid(user_id);
-                if (user) {
-                    _db->erase(*user);
-                    return true;
-                }
-                else {
-                    return false;
-                }
+                using query = odb::query<User>;
+                // 使用 erase_query 删除满足条件的记录
+                auto count = _db->erase_query<User>(query::user_id == user_id);
+                trans.commit();
+                return (count > 0);
             }
             catch (const std::exception& e) {
-                LOG_ERROR("删除用户失败{}: {}", user_id, e.what());
+                LOG_ERROR("删除用户失败 {}: {}", user_id, e.what());
+                return false;
+            }
+        }
+        bool clear() {
+            try {
+                odb::transaction trans(_db->begin());
+                // 直接执行 SQL TRUNCATE，相当于清空整个表
+                _db->execute("TRUNCATE TABLE users");
+                trans.commit();
+                return true;
+            }
+            catch (const std::exception& e) {
+                LOG_ERROR("清空用户表失败: {}", e.what());
                 return false;
             }
         }
@@ -162,5 +174,118 @@ namespace blus {
         }
     private:
         std::shared_ptr<odb::database> _db;
+    };
+
+    class ChatSessionMemberTable {
+    public:
+        using Ptr = std::shared_ptr<ChatSessionMemberTable>;
+        ChatSessionMemberTable(const std::shared_ptr<odb::database>& db) : _db(db) {}
+
+        bool append(const std::shared_ptr<ChatSessionMember>& member) {
+            try {
+                odb::transaction trans(_db->begin());
+                _db->persist(*member);
+                trans.commit();
+                return true;
+            }
+            catch (const std::exception& e) {
+                LOG_ERROR("新增单会话成员失败{}-{}: {}", member->session_id(), member->user_id(), e.what());
+                return false;
+            }
+        }
+        bool append(const ChatSessionMember& member) {
+            auto member_ptr = std::make_shared<ChatSessionMember>(member);
+            return append(member_ptr);
+        }
+        bool append(const std::vector<std::shared_ptr<ChatSessionMember>>& members) {
+            if (members.empty()) {
+                return false;
+            }
+            try {
+                odb::transaction trans(_db->begin());
+                for (const auto& member : members) {
+                    _db->persist(*member);
+                }
+                trans.commit();
+                return true;
+            }
+            catch (const std::exception& e) {
+                LOG_ERROR("新增多会话成员（共{}个）失败{}: {}", members.size(), members[0]->session_id(), e.what());
+                return false;
+            }
+        }
+        bool append(const std::vector<ChatSessionMember>& members) {
+            if (members.empty()) {
+                return false;
+            }
+            std::vector<std::shared_ptr<ChatSessionMember>> ptrs;
+            ptrs.reserve(members.size());
+            for (const auto& m : members) {
+                ptrs.push_back(std::make_shared<ChatSessionMember>(m));
+            }
+            return append(ptrs);
+        }
+        bool remove(const ChatSessionMember& member) {
+            try {
+                odb::transaction trans(_db->begin());
+                using query = odb::query<ChatSessionMember>;
+                auto count = _db->erase_query<ChatSessionMember>(query::session_id == member.session_id() && query::user_id == member.user_id());
+                trans.commit();
+                return (count > 0);
+            }
+            catch (const std::exception& e) {
+                LOG_ERROR("删除单会话成员失败{}-{}: {}", member.session_id(), member.user_id(), e.what());
+                return false;
+            }
+        }
+        bool remove(const std::string& session_id) {
+            try {
+                odb::transaction trans(_db->begin());
+                using query = odb::query<ChatSessionMember>;
+                using result = odb::result<ChatSessionMember>;
+                _db->erase_query<ChatSessionMember>(query::session_id == session_id);
+                trans.commit();
+                return true;
+            }
+            catch (const std::exception& e) {
+                LOG_ERROR("删除会话所有成员失败{}: {}", session_id, e.what());
+                return false;
+            }
+        }
+        bool clear() {
+            try {
+                odb::transaction trans(_db->begin());
+                // 直接执行 SQL TRUNCATE，相当于清空整个表
+                _db->execute("TRUNCATE TABLE chat_session_member");
+                trans.commit();
+                return true;
+            }
+            catch (const std::exception& e) {
+                LOG_ERROR("清空会话成员表失败: {}", e.what());
+                return false;
+            }
+        }
+        std::vector<std::string> get_members(const std::string& session_id) {
+            std::vector<std::string> members;
+            try {
+                odb::transaction trans(_db->begin());
+                using query = odb::query<ChatSessionMember>;
+                using result = odb::result<ChatSessionMember>;
+
+                result r = _db->query<ChatSessionMember>(query::session_id == session_id);
+                std::vector<std::shared_ptr<User>> users;
+                for (const auto& member : r) {
+                    members.push_back(member.user_id());
+                }
+                trans.commit();
+            }
+            catch (const std::exception& e) {
+                LOG_ERROR("查询会话成员失败 session_id: {}, {}", session_id, e.what());
+            }
+            return members;
+        }
+    private:
+        std::shared_ptr<odb::database> _db;
+
     };
 } // namespace blus
