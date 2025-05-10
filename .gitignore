@@ -6,11 +6,13 @@ log/
 cmake-build-debug/
 cmake-build-release/
 data/
+__*__
 
 # 其他文件
 *.conf
 *.jpg
 *.png
+*.yaml
 
 # sound
 *.wav
