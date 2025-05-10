@@ -52,6 +52,7 @@ set(ODB_INPUT_DIR ${CMAKE_SOURCE_DIR}/server/odb)
 set(ODB_FILES
     chat_session_member.hxx
     user.hxx
+    message.hxx
 )
 
 # 收集所有生成文件
@@ -71,6 +72,7 @@ foreach(f ${ODB_FILES})
            ${ODB_OUT_DIR}/${_sql}
     COMMAND odb -d mysql --std c++17
             --generate-query --generate-schema
+            --profile boost/date-time
             -o ${ODB_OUT_DIR}
             ${ODB_INPUT_DIR}/${f}
     DEPENDS ${ODB_INPUT_DIR}/${f}
@@ -86,11 +88,15 @@ endforeach()
 add_library(odb_gen STATIC ${ALL_ODB_SRCS})
 target_include_directories(odb_gen PUBLIC ${ODB_INPUT_DIR} ${ODB_OUT_DIR})
 
+# 添加 odb_boost_exceptions 静态库
+add_library(odb_boost_exceptions server/odb/odb_boost_date_time_exceptions.cxx)
+
 # 包含子项目
 add_subdirectory(server/src/speech)
 add_subdirectory(server/src/file)
 add_subdirectory(server/src/user)
 add_subdirectory(server/src/transmit)
+add_subdirectory(server/src/message)
 
 # 添加可执行文件
 add_executable(test test.cpp)

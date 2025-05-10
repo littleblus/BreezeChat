@@ -16,7 +16,7 @@ message GetHistoryMsgReq {
 message GetHistoryMsgRsp {
     string request_id = 1;
     bool success = 2;
-    string errmsg = 3; 
+    optional string errmsg = 3; 
     repeated MessageInfo msg_list = 4;
 }
 
@@ -32,7 +32,7 @@ message GetRecentMsgReq {
 message GetRecentMsgRsp {
     string request_id = 1;
     bool success = 2;
-    string errmsg = 3; 
+    optional string errmsg = 3; 
     repeated MessageInfo msg_list = 4;
 }
 
@@ -47,7 +47,7 @@ message MsgSearchReq {
 message MsgSearchRsp {
     string request_id = 1;
     bool success = 2;
-    string errmsg = 3; 
+    optional string errmsg = 3; 
     repeated MessageInfo msg_list = 4;
 }
 

@@ -38,7 +38,7 @@ namespace blus {
             const NewMessageReq* request,
             GetTransmitTargetRsp* response,
             google::protobuf::Closure* done) override {
-            LOG_DEBUG("{}-{} 收到新消息请求", request->request_id(), request->user_id());
+            // LOG_DEBUG("{}-{} 收到新消息请求", request->request_id(), request->user_id());
             brpc::ClosureGuard rpc_guard(done);
             response->set_request_id(request->request_id());
             std::string uid = request->user_id();
@@ -64,7 +64,7 @@ namespace blus {
                 response->set_success(false);
                 return;
             }
-            LOG_DEBUG("{}-{} user服务调用成功", request->request_id(), uid);
+            // LOG_DEBUG("{}-{} user服务调用成功", request->request_id(), uid);
             MessageInfo message;
             message.set_message_id(uuid());
             message.set_chat_session_id(chat_ssid);

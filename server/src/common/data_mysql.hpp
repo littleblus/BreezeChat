@@ -10,6 +10,8 @@
 #include "user-odb.hxx"
 #include "chat_session_member.hxx"
 #include "chat_session_member-odb.hxx"
+#include "message.hxx"
+#include "message-odb.hxx"
 #include "logger.hpp"
 
 namespace blus {
@@ -242,7 +244,6 @@ namespace blus {
             try {
                 odb::transaction trans(_db->begin());
                 using query = odb::query<ChatSessionMember>;
-                using result = odb::result<ChatSessionMember>;
                 _db->erase_query<ChatSessionMember>(query::session_id == session_id);
                 trans.commit();
                 return true;
@@ -287,5 +288,85 @@ namespace blus {
     private:
         std::shared_ptr<odb::database> _db;
 
+    };
+
+    class MessageTable {
+    public:
+        using Ptr = std::shared_ptr<MessageTable>;
+        MessageTable(const std::shared_ptr<odb::database>& db) : _db(db) {}
+
+        bool insert(const std::shared_ptr<Message>& message) {
+            try {
+                odb::transaction trans(_db->begin());
+                _db->persist(*message);
+                trans.commit();
+                return true;
+            }
+            catch (const std::exception& e) {
+                LOG_ERROR("新增消息失败{}: {}", message->message_id(), e.what());
+                return false;
+            }
+        }
+        bool insert(const Message& message) {
+            auto message_ptr = std::make_shared<Message>(message);
+            return insert(message_ptr);
+        }
+        bool remove(const std::string& session_id) {
+            try {
+                odb::transaction trans(_db->begin());
+                using query = odb::query<Message>;
+                _db->erase_query<Message>(query::session_id == session_id);
+                trans.commit();
+                return true;
+            }
+            catch (const std::exception& e) {
+                LOG_ERROR("删除会话所有消息失败{}: {}", session_id, e.what());
+                return false;
+            }
+        }
+        std::vector<Message> get_recent(const std::string& session_id, int count) {
+            std::vector<Message> messages;
+            try {
+                odb::transaction trans(_db->begin());
+                using query = odb::query<Message>;
+                using result = odb::result<Message>;
+
+                // ssid为条件, 时间逆序, limit为条数
+                std::stringstream cond;
+                cond << "session_id = '" << session_id << "' ORDER BY create_time DESC LIMIT " << count;
+                result r = _db->query<Message>(cond.str());
+                for (const auto& message : r) {
+                    messages.push_back(message);
+                }
+                trans.commit();
+            }
+            catch (const std::exception& e) {
+                LOG_ERROR("查询会话消息失败{}: {}", session_id, e.what());
+            }
+            return messages;
+        }
+        std::vector<Message> get_range(const std::string& session_id, boost::posix_time::ptime start, boost::posix_time::ptime end) {
+            std::vector<Message> messages;
+            try {
+                odb::transaction trans(_db->begin());
+                using query = odb::query<Message>;
+                using result = odb::result<Message>;
+
+                // ssid为条件, 时间过滤
+                result r = _db->query<Message>(query::session_id == session_id && query::create_time >= start && query::create_time <= end);
+                for (const auto& message : r) {
+                    messages.push_back(message);
+                }
+                trans.commit();
+            }
+            catch (const std::exception& e) {
+                LOG_ERROR("查询会话区间消息失败{} {} to {}: {}", session_id,
+                    boost::posix_time::to_simple_string(start),
+                    boost::posix_time::to_simple_string(end), e.what());
+            }
+            return messages;
+        }
+    private:
+        std::shared_ptr<odb::database> _db;
     };
 } // namespace blus

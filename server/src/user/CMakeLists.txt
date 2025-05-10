@@ -31,6 +31,8 @@ target_link_libraries(user_server
     pthread
     odb-mysql
     odb
+    odb-boost
+    odb_boost_exceptions
 )
 
 
@@ -53,6 +55,8 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         pthread
         odb-mysql
         odb
+        odb-boost
+        odb_boost_exceptions
     )
 
     target_link_libraries(user_redis_test
@@ -107,6 +111,8 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         pthread
         odb-mysql
         odb
+        odb-boost
+        odb_boost_exceptions
     )
 endif()
 
