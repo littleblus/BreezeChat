@@ -5,21 +5,13 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-# proto文件
-set(proto_files speech.proto)
-foreach(proto_file ${proto_files})
-    string(REGEX REPLACE "\.proto$" ".pb.cc" proto_src "${proto_file}")
-    string(REGEX REPLACE "\.proto$" ".pb.h" proto_hdr "${proto_file}")
-    list(APPEND proto_srcs ${CMAKE_BINARY_DIR}/proto/${proto_src})
-    list(APPEND proto_hdrs ${CMAKE_BINARY_DIR}/proto/${proto_hdr})
-endforeach()
-
 # 添加可执行文件
-add_executable(speech_server src/speech_server.cpp ${proto_srcs})
+add_executable(speech_server src/speech_server.cpp)
 
 # 链接依赖库
 target_link_libraries(speech_server
     PRIVATE
+    proto_objs
     gflags
     spdlog
     fmt
@@ -35,10 +27,11 @@ target_link_libraries(speech_server
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    add_executable(speech_client test/speech_client.cpp ${proto_srcs})
+    add_executable(speech_client test/speech_client.cpp)
 
     target_link_libraries(speech_client
         PRIVATE
+        proto_objs
         gflags
         spdlog
         fmt
@@ -57,7 +50,6 @@ endif()
 # 包含头文件目录
 include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}
-    ${CMAKE_BINARY_DIR}/proto
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/../common
     ${CMAKE_CURRENT_SOURCE_DIR}/../third/include

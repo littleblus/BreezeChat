@@ -6,26 +6,42 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # proto文件
+find_package(Protobuf REQUIRED)
 set(proto_path ${CMAKE_SOURCE_DIR}/server/proto)
 file(GLOB proto_files RELATIVE ${proto_path} "${proto_path}/*.proto")
 
-file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/proto)
+# proto文件输出目录
+set(PROTO_OUT ${CMAKE_BINARY_DIR}/proto)
+file(MAKE_DIRECTORY ${PROTO_OUT})
 
-foreach(proto_file ${proto_files})
-    string(REGEX REPLACE "\.proto$" ".pb.cc" proto_src "${proto_file}")
-    string(REGEX REPLACE "\.proto$" ".pb.h" proto_hdr "${proto_file}")
-    execute_process(
-        COMMAND protoc -I=${proto_path} --experimental_allow_proto3_optional --cpp_out=${CMAKE_BINARY_DIR}/proto ${proto_path}/${proto_file}
-        RESULT_VARIABLE protoc_result
-        OUTPUT_VARIABLE protoc_output
-        ERROR_VARIABLE protoc_error
-    )
-    if(NOT protoc_result EQUAL 0)
-        message(FATAL_ERROR "Failed to generate ${proto_file}: ${protoc_error}")
-    endif()
-    list(APPEND proto_srcs ${CMAKE_BINARY_DIR}/proto/${proto_src})
-    list(APPEND proto_hdrs ${CMAKE_BINARY_DIR}/proto/${proto_hdr})
+set(proto_srcs)
+set(proto_hdrs)
+foreach(p ${proto_files})
+  get_filename_component(name ${p} NAME_WE)
+  set(src ${PROTO_OUT}/${name}.pb.cc)
+  set(hdr ${PROTO_OUT}/${name}.pb.h)
+
+  add_custom_command(
+    OUTPUT ${src} ${hdr}
+    COMMAND ${Protobuf_PROTOC_EXECUTABLE}
+            --experimental_allow_proto3_optional
+            -I ${proto_path}
+            --cpp_out=${PROTO_OUT}
+            ${proto_path}/${p}
+    DEPENDS ${proto_path}/${p}
+    COMMENT "Compiling ${p}"
+  )
+
+  list(APPEND proto_srcs ${src})
+  list(APPEND proto_hdrs ${hdr})
 endforeach()
+
+add_custom_target(proto_gen ALL
+  DEPENDS ${proto_srcs} ${proto_hdrs}
+)
+
+add_library(proto_objs STATIC ${proto_srcs})
+target_include_directories(proto_objs PUBLIC ${PROTO_OUT})
 
 # 公共 ODB 输出目录
 set(ODB_OUT_DIR ${CMAKE_BINARY_DIR}/odb)

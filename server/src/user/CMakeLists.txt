@@ -5,22 +5,14 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-# proto文件
-set(proto_files base.proto user.proto file.proto)
-foreach(proto_file ${proto_files})
-    string(REGEX REPLACE "\.proto$" ".pb.cc" proto_src "${proto_file}")
-    string(REGEX REPLACE "\.proto$" ".pb.h" proto_hdr "${proto_file}")
-    list(APPEND proto_srcs ${CMAKE_BINARY_DIR}/proto/${proto_src})
-    list(APPEND proto_hdrs ${CMAKE_BINARY_DIR}/proto/${proto_hdr})
-endforeach()
-
 # 添加可执行文件
-add_executable(user_server src/user_server.cpp ${proto_srcs})
+add_executable(user_server src/user_server.cpp)
 
 # 链接依赖库
 target_link_libraries(user_server
     PRIVATE
     odb_gen
+    proto_objs
     gflags
     spdlog
     fmt
@@ -43,14 +35,15 @@ target_link_libraries(user_server
 
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    add_executable(user_mysql_test test/mysql_test/test.cpp ${proto_srcs})
-    add_executable(user_redis_test test/redis_test/test.cpp ${proto_srcs})
-    add_executable(user_es_test test/es_test/test.cpp ${proto_srcs})
-    add_executable(user_client test/user_client.cpp ${proto_srcs})
+    add_executable(user_mysql_test test/mysql_test/test.cpp)
+    add_executable(user_redis_test test/redis_test/test.cpp)
+    add_executable(user_es_test test/es_test/test.cpp)
+    add_executable(user_client test/user_client.cpp)
 
     target_link_libraries(user_mysql_test
         PRIVATE
         odb_gen
+        proto_objs
         gflags
         gtest
         spdlog
@@ -64,6 +57,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
     target_link_libraries(user_redis_test
         PRIVATE
+        proto_objs
         gflags
         gtest
         hiredis
@@ -77,6 +71,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
     target_link_libraries(user_es_test
         PRIVATE
+        proto_objs
         gflags
         gtest
         spdlog
@@ -91,6 +86,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_link_libraries(user_client
         PRIVATE
         odb_gen
+        proto_objs
         gflags
         gtest
         gmock
@@ -117,7 +113,6 @@ endif()
 # 包含头文件目录
 include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}
-    ${CMAKE_BINARY_DIR}/proto
     ${CMAKE_SOURCE_DIR}/server/odb
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/../common
