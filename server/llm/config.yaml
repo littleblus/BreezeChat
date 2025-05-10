@@ -1,3 +1,0 @@
-api: http://localhost:11434/
-model: qwen3:14b
-port: 5000
