@@ -19,6 +19,8 @@ target_link_libraries(message_server
     amqpcpp
     ev
     etcd-cpp-api
+    elasticlient
+    jsoncpp
     cpprest
     brpc
     /usr/local/openssl-3.0.16/lib64/libssl.so.3
@@ -35,6 +37,8 @@ target_link_libraries(message_server
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_executable(message_mysql_test test/mysql_test/test.cpp)
+    add_executable(message_es_test test/es_test/test.cpp)
+    add_executable(message_client test/message_client.cpp)
 
     target_link_libraries(message_mysql_test
         PRIVATE
@@ -52,11 +56,48 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         odb
         odb_boost_exceptions
     )
+
+    target_link_libraries(message_es_test
+        PRIVATE
+        proto_objs
+        gflags
+        gtest
+        spdlog
+        fmt
+        cpr
+        elasticlient
+        jsoncpp
+        protobuf
+        pthread
+    )
+
+    target_link_libraries(message_client
+        PRIVATE
+        proto_objs
+        gflags
+        gtest
+        spdlog
+        fmt
+        cpr
+        elasticlient
+        jsoncpp
+        cpprest
+        brpc
+        /usr/local/openssl-3.0.16/lib64/libssl.so.3
+        /usr/local/openssl-3.0.16/lib64/libcrypto.so.3
+        protobuf
+        pthread
+        odb-mysql
+        odb-boost
+        odb
+        odb_boost_exceptions
+    )
 endif()
 
 # 包含头文件目录
 include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}
+    ${CMAKE_SOURCE_DIR}/server/odb
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/../common
     ${CMAKE_CURRENT_SOURCE_DIR}/../third/include

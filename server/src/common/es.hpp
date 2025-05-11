@@ -197,10 +197,27 @@ namespace blus {
             _should.append(match);
             return *this;
         }
+        ESSearch& append_must_term(const std::string& key, const std::string& value) {
+            Json::Value field;
+            field[key] = value;
+            Json::Value term;
+            term["term"] = field;
+            _must.append(term);
+            return *this;
+        }
+        ESSearch& append_must_match(const std::string& key, const std::string& value) {
+            Json::Value field;
+            field[key] = value;
+            Json::Value match;
+            match["match"] = field;
+            _must.append(match);
+            return *this;
+        }
         Json::Value search() {
             Json::Value condition;
             if (!_must_not.empty()) condition["must_not"] = _must_not;
             if (!_should.empty()) condition["should"] = _should;
+            if (!_must.empty()) condition["must"] = _must;
             Json::Value root;
             root["query"]["bool"] = condition;
             std::string body;
@@ -236,6 +253,7 @@ namespace blus {
     private:
         Json::Value _must_not;
         Json::Value _should;
+        Json::Value _must;
         std::string _name;
         std::string _type;
         std::shared_ptr<elasticlient::Client> _client;
