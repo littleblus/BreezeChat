@@ -57,6 +57,22 @@ namespace blus {
             // std::cout << str << std::endl;
         }
 
+        // 检查索引是否存在
+        bool exists() {
+            try {
+                // 发送 HEAD 请求到索引路径
+                auto resp = _client->performRequest(elasticlient::Client::HTTPMethod::HEAD, _name, "");
+
+                // 根据状态码判断索引是否存在
+                return resp.status_code == 200;
+            }
+            catch (...) {
+                // 处理连接异常，例如所有节点都失败的情况
+                LOG_ERROR("检查索引是否存在失败{}", _name);
+                return false;
+            }
+        }
+
         ESIndex& append(const std::string& key,
             const std::string& type = "text",
             const std::string& analyzer = "ik_max_word",
@@ -94,6 +110,20 @@ namespace blus {
                 return false;
             }
             return true;
+        }
+        bool remove() {
+            try {
+                // 发送 DELETE 请求到索引路径
+                auto resp = _client->performRequest(elasticlient::Client::HTTPMethod::DELETE, _name, "");
+
+                // 根据状态码判断索引是否删除
+                return resp.status_code == 200;
+            }
+            catch (...) {
+                // 处理连接异常，例如所有节点都失败的情况
+                LOG_ERROR("检查索引是否存在失败{}", _name);
+                return false;
+            }
         }
     private:
         std::string _name;

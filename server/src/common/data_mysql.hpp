@@ -324,6 +324,34 @@ namespace blus {
                 return false;
             }
         }
+        bool clear() {
+            try {
+                odb::transaction trans(_db->begin());
+                // 直接执行 SQL TRUNCATE，相当于清空整个表
+                _db->execute("TRUNCATE TABLE message");
+                trans.commit();
+                return true;
+            }
+            catch (const std::exception& e) {
+                LOG_ERROR("清空消息表失败: {}", e.what());
+                return false;
+            }
+        }
+        std::shared_ptr<Message> select_by_mid(const std::string& message_id) {
+            std::shared_ptr<Message> res;
+            try {
+                odb::transaction trans(_db->begin());
+                using query = odb::query<Message>;
+                using result = odb::result<Message>;
+                res.reset(_db->query_one<Message>(query::message_id == message_id));
+                trans.commit();
+                return res;
+            }
+            catch (const std::exception& e) {
+                LOG_ERROR("查询消息失败 message_id: {}, {}", message_id, e.what());
+            }
+            return nullptr;
+        }
         std::vector<Message> get_recent(const std::string& session_id, int count) {
             std::vector<Message> messages;
             try {
@@ -343,6 +371,8 @@ namespace blus {
             catch (const std::exception& e) {
                 LOG_ERROR("查询会话消息失败{}: {}", session_id, e.what());
             }
+            // 反转消息顺序
+            std::reverse(messages.begin(), messages.end());
             return messages;
         }
         std::vector<Message> get_range(const std::string& session_id, boost::posix_time::ptime start, boost::posix_time::ptime end) {

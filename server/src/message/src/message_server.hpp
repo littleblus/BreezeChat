@@ -30,6 +30,10 @@ namespace blus {
             , _file_service_name(file_service_name)
             , _user_service_name(user_service_name)
             , _service_manager(sm) {
+            if (!_es_message->createIndex()) {
+                LOG_ERROR("创建消息索引失败");
+                exit(EXIT_FAILURE);
+            }
         }
         ~MsgStorageServiceImpl() {}
 
@@ -63,8 +67,10 @@ namespace blus {
             for (const auto& msg : msg_list) {
                 user_ids.push_back(msg.user_id());
             }
-            auto user_info = _get_users(request->request_id(), user_ids);
-            if (user_info.size() != user_ids.size()) {
+            // 对user_ids去重得到新的去重vector 
+            std::unordered_set<std::string> user_id_set(user_ids.begin(), user_ids.end());
+            auto user_info = _get_users(request->request_id(), std::vector<std::string>(user_id_set.begin(), user_id_set.end()));
+            if (user_info.size() != user_id_set.size()) {
                 LOG_ERROR("获取用户信息失败");
                 response->set_success(false);
                 response->set_errmsg("获取用户信息失败");
@@ -135,8 +141,10 @@ namespace blus {
             for (const auto& msg : msg_list) {
                 user_ids.push_back(msg.user_id());
             }
-            auto user_info = _get_users(request->request_id(), user_ids);
-            if (user_info.size() != user_ids.size()) {
+            // 对user_ids去重得到新的去重vector 
+            std::unordered_set<std::string> user_id_set(user_ids.begin(), user_ids.end());
+            auto user_info = _get_users(request->request_id(), std::vector<std::string>(user_id_set.begin(), user_id_set.end()));
+            if (user_info.size() != user_id_set.size()) {
                 LOG_ERROR("获取用户信息失败");
                 response->set_success(false);
                 response->set_errmsg("获取用户信息失败");
@@ -192,8 +200,10 @@ namespace blus {
             for (const auto& msg : msg_list) {
                 user_ids.push_back(msg.user_id());
             }
-            auto user_info = _get_users(request->request_id(), user_ids);
-            if (user_info.size() != user_ids.size()) {
+            // 对user_ids去重得到新的去重vector 
+            std::unordered_set<std::string> user_id_set(user_ids.begin(), user_ids.end());
+            auto user_info = _get_users(request->request_id(), std::vector<std::string>(user_id_set.begin(), user_id_set.end()));
+            if (user_info.size() != user_id_set.size()) {
                 LOG_ERROR("获取用户信息失败");
                 response->set_success(false);
                 response->set_errmsg("获取用户信息失败");

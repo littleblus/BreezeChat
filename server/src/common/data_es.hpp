@@ -20,7 +20,15 @@ namespace blus {
             : _client(client) {
         }
         bool createIndex() {
-            auto ret = ESIndex(_client, "user")
+            // 如果同名索引存在则不创建
+            auto index = ESIndex(_client, "user");
+            if (index.exists()) {
+                LOG_INFO("用户索引已存在，无需创建");
+                return true;
+            }
+            LOG_INFO("创建用户索引");
+
+            auto ret = index
                 .append("user_id", "keyword", "standard", true)
                 .append("email", "keyword", "standard", true)
                 .append("nickname")
@@ -31,6 +39,9 @@ namespace blus {
                 LOG_ERROR("用户索引创建失败");
             }
             return ret;
+        }
+        bool deleteIndex() {
+            return ESIndex(_client, "user").remove();
         }
         bool append(
             const std::string& uid,
@@ -94,7 +105,14 @@ namespace blus {
             : _client(client) {
         }
         bool createIndex() {
-            auto ret = ESIndex(_client, "message")
+            auto index = ESIndex(_client, "message");
+            if (index.exists()) {
+                LOG_INFO("消息索引已存在，无需创建");
+                return true;
+            }
+            LOG_INFO("创建消息索引");
+
+            auto ret = index
                 .append("user_id", "keyword", "standard", true)
                 .append("message_id", "keyword", "standard", false)
                 .append("chat_session_id", "keyword", "standard", false)
@@ -105,6 +123,9 @@ namespace blus {
                 LOG_ERROR("消息索引创建失败");
             }
             return ret;
+        }
+        bool deleteIndex() {
+            return ESIndex(_client, "message").remove();
         }
         bool append(const std::string& user_id,
             const std::string& message_id,

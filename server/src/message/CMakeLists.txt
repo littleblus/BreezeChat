@@ -73,12 +73,14 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
     target_link_libraries(message_client
         PRIVATE
+        odb_gen
         proto_objs
         gflags
         gtest
         spdlog
         fmt
         cpr
+        etcd-cpp-api
         elasticlient
         jsoncpp
         cpprest
@@ -86,6 +88,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         /usr/local/openssl-3.0.16/lib64/libssl.so.3
         /usr/local/openssl-3.0.16/lib64/libcrypto.so.3
         protobuf
+        leveldb
         pthread
         odb-mysql
         odb-boost

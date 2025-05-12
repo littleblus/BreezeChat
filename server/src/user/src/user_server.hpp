@@ -40,6 +40,10 @@ namespace blus {
             , _service_manager(sm)
             , _discovery(discovery)
             , _text_classifier(text_classifier) {
+            if (!_es_user->createIndex()) {
+                LOG_ERROR("创建es索引失败");
+                exit(EXIT_FAILURE);
+            }
         }
         ~UserServiceImpl() {}
 
@@ -389,59 +393,82 @@ namespace blus {
             google::protobuf::Closure* done) override {
             brpc::ClosureGuard rpc_guard(done);
             response->set_request_id(request->request_id());
-            // 批量获取用户信息
+            // 获取请求中的用户ID（可能包含重复项）
             const auto& user_id_list = request->users_id();
-            std::vector<std::string> user_id_list_vec;
+            std::vector<std::string> original_ids;
+            original_ids.reserve(user_id_list.size());
             for (int i = 0; i < user_id_list.size(); ++i) {
-                user_id_list_vec.push_back(user_id_list.Get(i));
+                original_ids.push_back(user_id_list.Get(i));
             }
-            auto users = _user_table->select_multi_users(user_id_list_vec);
-            if (users.size() != user_id_list_vec.size()) {
-                LOG_ERROR("{} - mysql数据库查询失败: 批量查找结果与要求不一致, 请求数量{}, 结果数量{}",
-                    request->request_id(), user_id_list_vec.size(), users.size());
+            // 去重
+            std::vector<std::string> dedup_ids;
+            std::unordered_set<std::string> seen;
+            for (const auto& id : original_ids) {
+                if (seen.insert(id).second) {
+                    dedup_ids.push_back(id);
+                }
+            }
+            // 查询去重后的用户信息
+            auto users = _user_table->select_multi_users(dedup_ids);
+            if (users.size() != dedup_ids.size()) {
+                LOG_ERROR("{} - mysql数据库查询失败: 批量查找结果与要求不一致, 请求去重数量{}, 结果数量{}",
+                    request->request_id(), dedup_ids.size(), users.size());
                 response->set_errmsg("用户不存在");
                 response->set_success(false);
                 return;
             }
-            // 批量获取头像
-            std::vector<std::string> avatar_id_list;
+            // 构造用户映射
+            std::unordered_map<std::string, std::shared_ptr<User>> user_map;
             for (const auto& user : users) {
-                if (!user->avatar_id().empty()) {
-                    avatar_id_list.push_back(user->avatar_id());
+                user_map[user->user_id()] = user;
+            }
+            auto* out_map = response->mutable_users_info();
+            for (const auto& [k, v] : user_map) {
+                UserInfo info;
+                info.set_user_id(v->user_id());
+                info.set_nickname(v->nickname());
+                info.set_description(v->description());
+                info.set_email(v->email());
+                (*out_map)[k] = info;
+            }
+            // 收集所有需要查询头像的 avatar_id（去重）
+            std::unordered_set<std::string> avatar_set;
+            for (const auto& [_, v] : user_map) {
+                if (!v->avatar_id().empty()) {
+                    avatar_set.insert(v->avatar_id());
                 }
             }
-            auto channel = _service_manager->get(_file_service_name);
-            if (!channel) {
-                LOG_ERROR("{} - 获取file服务失败", request->request_id());
-                response->set_errmsg("获取file服务失败");
-                response->set_success(false);
-                return;
-            }
-            FileService_Stub stub(channel.get());
-            GetMultiFileReq file_request;
-            file_request.set_request_id(request->request_id());
-            for (const auto& avatar_id : avatar_id_list) {
-                file_request.add_file_id_list(avatar_id);
-            }
-            GetMultiFileRsp file_response;
-            brpc::Controller cntl;
-            stub.GetMultiFile(&cntl, &file_request, &file_response, nullptr);
-            if (cntl.Failed() || !file_response.success()) {
-                LOG_ERROR("{} - file服务查询失败: {}", request->request_id(), cntl.ErrorText());
-                response->set_errmsg("获取头像失败");
-                response->set_success(false);
-                return;
-            }
-            // 组装返回结果
-            auto& user_map = *response->mutable_users_info();
-            const auto& file_map = file_response.file_data();
-            for (const auto& user : users) {
-                auto& user_info = user_map[user->user_id()];
-                user_info.set_user_id(user->user_id());
-                user_info.set_nickname(user->nickname());
-                user_info.set_description(user->description());
-                user_info.set_email(user->email());
-                if (!user->avatar_id().empty()) user_info.set_avatar(file_map.at(user->avatar_id()).file_content());
+            if (!avatar_set.empty()) {
+                auto channel = _service_manager->get(_file_service_name);
+                if (!channel) {
+                    LOG_ERROR("{} - 获取file服务失败", request->request_id());
+                    response->set_errmsg("获取file服务失败");
+                    response->set_success(false);
+                    return;
+                }
+                FileService_Stub stub(channel.get());
+                GetMultiFileReq file_request;
+                file_request.set_request_id(request->request_id());
+                for (const auto& aid : avatar_set) {
+                    file_request.add_file_id_list(aid);
+                }
+                GetMultiFileRsp file_response;
+                brpc::Controller cntl;
+                stub.GetMultiFile(&cntl, &file_request, &file_response, nullptr);
+                if (cntl.Failed() || !file_response.success()) {
+                    LOG_ERROR("{} - file服务查询失败: {}", request->request_id(), cntl.ErrorText());
+                    response->set_errmsg("获取头像失败");
+                    response->set_success(false);
+                    return;
+                }
+                const auto& file_map = file_response.file_data();
+                // 更新 map 中各用户的头像字段
+                for (auto& [k, v] : *out_map) {
+                    auto it = user_map.find(k);
+                    if (it != user_map.end() && !it->second->avatar_id().empty()) {
+                        v.set_avatar(file_map.at(it->second->avatar_id()).file_content());
+                    }
+                }
             }
             response->set_success(true);
         }
